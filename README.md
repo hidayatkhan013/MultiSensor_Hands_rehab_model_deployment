@@ -399,6 +399,3 @@ If collecting live raw window data for retargeting, logging, or plotting:
 
 ---
 
-## 📜 License
-
-This project is open source and available under the [MIT License](LICENSE).
