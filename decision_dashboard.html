@@ -1,0 +1,1840 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMU Rehabilitation Decision Dashboard · Edge AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(18, 24, 38, 0.75);
+      --bg-card-hover: rgba(26, 35, 54, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(14, 165, 233, 0.5);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --cyan: #06b6d4;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --indigo: #6366f1;
+      --purple: #a855f7;
+      
+      --color-extension: #f43f5e;
+      --color-flexion: #10b981;
+      --color-pronation: #0ea5e9;
+      --color-radial: #a855f7;
+      --color-supination: #f97316;
+      --color-ulnar: #eab308;
+
+      --glow-cyan: 0 0 25px rgba(6, 182, 212, 0.25);
+      --glow-emerald: 0 0 25px rgba(16, 185, 129, 0.25);
+      --glow-amber: 0 0 25px rgba(245, 158, 11, 0.25);
+      --glow-rose: 0 0 25px rgba(244, 63, 94, 0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 15% 15%, #131c31 0%, transparent 40%),
+                  radial-gradient(circle at 85% 85%, #181938 0%, transparent 45%),
+                  var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      line-height: 1.5;
+      padding-bottom: 50px;
+    }
+
+    /* Container */
+    .container {
+      width: min(1320px, calc(100% - 40px));
+      margin: 0 auto;
+      padding-top: 28px;
+    }
+
+    /* Top Navigation Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    }
+    .logo-icon svg { width: 26px; height: 26px; stroke: white; }
+
+    .brand-titles h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-titles p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Toolbar Controls */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn svg { width: 16px; height: 16px; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: white;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #0369a1, #075985);
+      transform: translateY(-1px);
+    }
+
+    .btn-disconnect {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border-color: rgba(244, 63, 94, 0.3);
+    }
+    .btn-disconnect:hover:not(:disabled) {
+      background: rgba(244, 63, 94, 0.25);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border-color: var(--border-subtle);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-accent {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .btn-accent:hover:not(:disabled) {
+      background: rgba(16, 185, 129, 0.25);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Live Connection Pill */
+    .connection-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rose);
+      box-shadow: 0 0 10px var(--rose);
+      transition: all 0.3s ease;
+    }
+    .status-dot.connected {
+      background: var(--emerald);
+      box-shadow: 0 0 12px var(--emerald);
+    }
+
+    /* Key Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    }
+    .metric-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 8px 0 4px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+    }
+    .metric-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Interactive Movement Selection Section */
+    .section-box {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .section-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(14, 165, 233, 0.15);
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Radio Cards Grid */
+    .movements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .movement-radio-label {
+      position: relative;
+      cursor: pointer;
+      display: block;
+    }
+
+    .movement-radio-label input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .movement-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 2px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px 18px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .movement-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+    }
+
+    /* Radio Selected Styles */
+    .movement-radio-label input[type="radio"]:checked + .movement-card {
+      background: rgba(14, 165, 233, 0.08);
+      border-color: var(--cyan);
+      box-shadow: 0 0 25px rgba(14, 165, 233, 0.2);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .radio-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .movement-radio-label input[type="radio"]:checked + .movement-card .radio-circle {
+      border-color: var(--cyan);
+      background: var(--cyan);
+    }
+    .radio-circle::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: white;
+      display: none;
+    }
+    .movement-radio-label input[type="radio"]:checked + .movement-card .radio-circle::after {
+      display: block;
+    }
+
+    .card-index {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .movement-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .movement-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* Repetition & Goal Dashboard */
+    .rep-tracker-box {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(99, 102, 241, 0.08));
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .rep-tracker-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .rep-info-block {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .rep-radial-summary {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .rep-radial-summary span {
+      font-size: 18px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .rep-progress-wrap {
+      flex: 1;
+      min-width: 260px;
+      max-width: 480px;
+    }
+    .rep-progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+    .progress-bar-bg {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0ea5e9, #10b981);
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+    }
+
+    .rep-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .delay-picker-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .select-styled {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--cyan);
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+    .select-styled option {
+      background: #111827;
+      color: #fff;
+    }
+
+    .rep-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Hand Return / Rest Delay Status Banner */
+    .rest-status-banner {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+    .rest-status-banner.resting {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(14, 165, 233, 0.12));
+      box-shadow: var(--glow-amber);
+    }
+    .rest-status-banner.ready {
+      border-color: rgba(16, 185, 129, 0.45);
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.12));
+    }
+
+    .rest-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .rest-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rest-countdown-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--amber);
+    }
+    .rest-countdown-badge.ready {
+      color: var(--emerald);
+    }
+
+    .rest-progress-bar {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+    .rest-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--amber), var(--cyan));
+      border-radius: 999px;
+      transition: width 0.1s linear;
+    }
+    .rest-progress-fill.ready {
+      background: var(--emerald);
+      width: 100%;
+    }
+
+    /* Target Complete Banner */
+    .goal-complete-banner {
+      display: none;
+      width: 100%;
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 10px;
+      padding: 12px 18px;
+      color: #a7f3d0;
+      font-size: 14px;
+      font-weight: 700;
+      align-items: center;
+      gap: 10px;
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.4); }
+    }
+
+    /* Main Dual Telemetry Area */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* Left: Live Decision & Realtime Comparison */
+    .decision-display-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 400px;
+      position: relative;
+    }
+
+    .card-top-tag {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-top-tag .title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+    }
+
+    .decision-big {
+      margin: 20px 0;
+    }
+    .decision-big .model-output {
+      font-size: clamp(42px, 7vw, 68px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -1.5px;
+      transition: color 0.3s ease;
+      color: var(--text-main);
+    }
+    .decision-big .inference-status-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Real-Time Comparison Block */
+    .comparison-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .comp-unit {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .comp-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+    .comp-val {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .match-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .match-pill.waiting {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-dim);
+      border: 1px solid var(--border-subtle);
+    }
+    .match-pill.resting {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .match-pill.correct {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+      animation: popIn 0.25s ease;
+    }
+    .match-pill.wrong {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+      animation: popIn 0.25s ease;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.92); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .decision-foot-stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding-top: 18px;
+      margin-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Right: Activity Stream & History Log */
+    .history-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .history-header h3 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .filter-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .history-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .history-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .history-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .log-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .log-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .log-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .log-time {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+      font-size: 11px;
+    }
+    .log-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+    .log-labels {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .log-arrow {
+      color: var(--text-dim);
+      font-size: 10px;
+    }
+    .target-tag {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .pred-tag {
+      font-weight: 700;
+    }
+
+    .log-status {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .log-status.correct {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .log-status.wrong {
+      background: rgba(244, 63, 94, 0.18);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+    }
+
+    .log-rep-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--cyan);
+      font-weight: 600;
+      min-width: 44px;
+      text-align: right;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-dim);
+      text-align: center;
+      gap: 8px;
+      padding: 40px 20px;
+    }
+    .empty-state svg { width: 38px; height: 38px; stroke: var(--text-dim); }
+
+    /* Footer Info */
+    footer {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* Sound Switch */
+    .sound-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .sound-toggle input { cursor: pointer; }
+
+    @media (max-width: 900px) {
+      .telemetry-grid { grid-template-columns: 1fr; }
+      .decision-display-card { min-height: 340px; }
+      .history-card { height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Top Navigation Header -->
+    <header>
+      <div class="brand-group">
+        <div class="logo-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <h1>IMU Gesture Rehabilitation</h1>
+          <p>Arduino Nano 33 BLE · Edge-AI TensorFlow Lite Micro Monitor</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="connection-badge">
+          <span id="connection-dot" class="status-dot"></span>
+          <span id="connection-text">Disconnected</span>
+        </div>
+
+        <button id="btn-connect" class="btn btn-primary">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Connect Nano
+        </button>
+
+        <button id="btn-disconnect" class="btn btn-disconnect" style="display:none;">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728M5.636 5.636a9 9 0 000 12.728M12 3v9" />
+          </svg>
+          Disconnect
+        </button>
+
+        <button id="btn-export-csv" class="btn btn-accent">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </button>
+
+        <button id="btn-demo-sim" class="btn btn-secondary" title="Simulate incoming Arduino detections for offline testing">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Simulate
+        </button>
+
+        <button id="btn-clear-log" class="btn btn-secondary">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Clear
+        </button>
+      </div>
+    </header>
+
+    <!-- Key Metrics Overview -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-title">Target Exercise</div>
+        <div class="metric-value" id="card-target-val" style="color: var(--cyan); font-size: 22px;">Flexion</div>
+        <div class="metric-sub">Perform 10 prescribed reps</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Repetition Count</div>
+        <div class="metric-value" id="card-rep-val">0 / 10</div>
+        <div class="metric-sub" id="card-rep-percent">0% Completed</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Session Accuracy</div>
+        <div class="metric-value" id="card-acc-val" style="color: var(--emerald);">0.0%</div>
+        <div class="metric-sub"><span id="stat-correct-count">0</span> correct · <span id="stat-wrong-count">0</span> wrong</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Current Streak</div>
+        <div class="metric-value" id="card-streak-val">0 🔥</div>
+        <div class="metric-sub">Consecutive matches</div>
+      </div>
+    </div>
+
+    <!-- Movement Selection & 10-Repetition Prescription Area -->
+    <section class="section-box">
+      <div class="section-header">
+        <div>
+          <h2>
+            <svg style="width:20px;height:20px;stroke:var(--cyan)" fill="none" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Select Target Movement
+            <span class="badge-pill">10 Repetitions Goal</span>
+          </h2>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted);">
+          Select the exercise movement you are performing:
+        </div>
+      </div>
+
+      <!-- Radio Buttons for All 6 Movements -->
+      <div class="movements-grid" id="movements-container">
+        <!-- 0: Extension -->
+        <label class="movement-radio-label">
+          <input type="radio" name="targetMovement" value="Extension">
+          <div class="movement-card">
+            <div class="card-top">
+              <span class="card-index">CLASS 0</span>
+              <span class="radio-circle"></span>
+            </div>
+            <div class="movement-name" style="color: var(--color-extension);">Extension</div>
+            <div class="movement-desc">Wrist bends backward toward dorsal surface</div>
+          </div>
+        </label>
+
+        <!-- 1: Flexion (default checked) -->
+        <label class="movement-radio-label">
+          <input type="radio" name="targetMovement" value="Flexion" checked>
+          <div class="movement-card">
+            <div class="card-top">
+              <span class="card-index">CLASS 1</span>
+              <span class="radio-circle"></span>
+            </div>
+            <div class="movement-name" style="color: var(--color-flexion);">Flexion</div>
+            <div class="movement-desc">Wrist bends forward / downward toward palm</div>
+          </div>
+        </label>
+
+        <!-- 2: Pronation -->
+        <label class="movement-radio-label">
+          <input type="radio" name="targetMovement" value="Pronation">
+          <div class="movement-card">
+            <div class="card-top">
+              <span class="card-index">CLASS 2</span>
+              <span class="radio-circle"></span>
+            </div>
+            <div class="movement-name" style="color: var(--color-pronation);">Pronation</div>
+            <div class="movement-desc">Forearm rotates inward (palm facing down)</div>
+          </div>
+        </label>
+
+        <!-- 3: Radial Deviation -->
+        <label class="movement-radio-label">
+          <input type="radio" name="targetMovement" value="Radial_Deviation">
+          <div class="movement-card">
+            <div class="card-top">
+              <span class="card-index">CLASS 3</span>
+              <span class="radio-circle"></span>
+            </div>
+            <div class="movement-name" style="color: var(--color-radial);">Radial Dev.</div>
+            <div class="movement-desc">Wrist tilts laterally toward thumb side</div>
+          </div>
+        </label>
+
+        <!-- 4: Supination -->
+        <label class="movement-radio-label">
+          <input type="radio" name="targetMovement" value="Supination">
+          <div class="movement-card">
+            <div class="card-top">
+              <span class="card-index">CLASS 4</span>
+              <span class="radio-circle"></span>
+            </div>
+            <div class="movement-name" style="color: var(--color-supination);">Supination</div>
+            <div class="movement-desc">Forearm rotates outward (palm facing up)</div>
+          </div>
+        </label>
+
+        <!-- 5: Ulnar Deviation -->
+        <label class="movement-radio-label">
+          <input type="radio" name="targetMovement" value="Ulnar_Deviation">
+          <div class="movement-card">
+            <div class="card-top">
+              <span class="card-index">CLASS 5</span>
+              <span class="radio-circle"></span>
+            </div>
+            <div class="movement-name" style="color: var(--color-ulnar);">Ulnar Dev.</div>
+            <div class="movement-desc">Wrist tilts medially toward pinky side</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Repetition Counter Bar & Recovery Controls -->
+      <div class="rep-tracker-box">
+        <div class="rep-tracker-top">
+          <div class="rep-info-block">
+            <div class="rep-radial-summary">
+              <span id="rep-current-count" style="font-size: 38px; color: #fff;">0</span>
+              <span>/ 10 REPS</span>
+            </div>
+          </div>
+
+          <div class="rep-progress-wrap">
+            <div class="rep-progress-label">
+              <span>Progress toward 10 repetitions</span>
+              <span id="rep-progress-text">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="rep-progress-fill" class="progress-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hand Return / Neutral Rest Delay Banner -->
+        <div id="rest-status-banner" class="rest-status-banner ready">
+          <div class="rest-header">
+            <div class="rest-header-left">
+              <span id="rest-status-icon" style="font-size: 16px;">🟢</span>
+              <span id="rest-status-text">Hand in starting position · Ready for repetition</span>
+            </div>
+            <span id="rest-countdown-badge" class="rest-countdown-badge ready">READY</span>
+          </div>
+          <div class="rest-progress-bar">
+            <div id="rest-progress-fill" class="rest-progress-fill ready"></div>
+          </div>
+        </div>
+
+        <div class="rep-controls-row">
+          <!-- Delay Configuration Selector -->
+          <div class="delay-picker-group">
+            <label for="rest-delay-select">
+              <svg style="width:14px;height:14px;vertical-align:-2px;stroke:var(--cyan)" fill="none" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Return to Start Delay:
+            </label>
+            <select id="rest-delay-select" class="select-styled">
+              <option value="1500">1.5 sec (Fast)</option>
+              <option value="2500">2.5 sec</option>
+              <option value="3000" selected>3.0 sec (Recommended)</option>
+              <option value="4000">4.0 sec (Relaxed)</option>
+              <option value="5000">5.0 sec (Slow / Guided)</option>
+            </select>
+          </div>
+
+          <div class="rep-actions">
+            <button id="btn-rep-minus" class="btn btn-secondary" title="Decrease rep count by 1">-1</button>
+            <button id="btn-rep-plus" class="btn btn-secondary" title="Increase rep count by 1">+1</button>
+            <button id="btn-rep-reset" class="btn btn-secondary">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset Reps
+            </button>
+          </div>
+        </div>
+
+        <!-- Celebratory Completion Banner -->
+        <div id="goal-complete-banner" class="goal-complete-banner">
+          <span>🎉</span>
+          <span><strong>Target Achieved!</strong> You have successfully completed all 10 repetitions for this exercise. Excellent work!</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Dual Telemetry Area -->
+    <div class="telemetry-grid">
+      
+      <!-- Left: Real-time Decision & Comparison Display -->
+      <section class="decision-display-card" id="decision-card">
+        <div>
+          <div class="card-top-tag">
+            <span class="title">Edge Inference Output</span>
+            <span id="live-indicator" style="font-size: 12px; font-weight: 600; color: var(--text-dim);">● Idle</span>
+          </div>
+
+          <div class="decision-big">
+            <div class="inference-status-sub">Latest Model Prediction:</div>
+            <div id="decision-text" class="model-output">Waiting...</div>
+          </div>
+        </div>
+
+        <!-- Real-Time Comparison Block -->
+        <div>
+          <div class="comparison-box">
+            <div class="comp-unit">
+              <span class="comp-label">Target Movement</span>
+              <span id="comp-target-name" class="comp-val">Flexion</span>
+            </div>
+
+            <div class="comp-unit">
+              <span class="comp-label">Detected Movement</span>
+              <span id="comp-detected-name" class="comp-val">--</span>
+            </div>
+
+            <div>
+              <div id="comp-match-status" class="match-pill waiting">
+                <span>Waiting</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="decision-foot-stats">
+            <div>
+              Last Received:<br>
+              <strong id="last-update-time" style="color: var(--text-main);">No packets yet</strong>
+            </div>
+            <div>
+              Model Accuracy (Board):<br>
+              <strong id="board-accuracy-text" style="color: var(--cyan); font-family: 'JetBrains Mono', monospace;">--</strong>
+            </div>
+            <div>
+              Inference Rate:<br>
+              <strong id="inference-rate-text" style="color: var(--text-main);">~100 Hz Sampled</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Live Activity Stream & Verification Logs -->
+      <section class="history-card">
+        <div class="history-header">
+          <h3>Verification Log</h3>
+          <span id="log-count-badge" class="badge-pill" style="font-family: 'JetBrains Mono', monospace;">0 entries</span>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+          <button class="filter-btn active" data-filter="all">All Logs</button>
+          <button class="filter-btn" data-filter="CORRECT">Correct Only</button>
+          <button class="filter-btn" data-filter="WRONG">Wrong Only</button>
+        </div>
+
+        <!-- Scrollable Logs List -->
+        <div class="history-scroll">
+          <ul id="log-list" class="log-list">
+            <li id="log-empty-state" class="empty-state">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              <span>Connect Arduino Nano 33 BLE to stream live decisions</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer Controls & Audio -->
+    <footer>
+      <div>
+        <span>Hardware: <strong>Arduino Nano 33 BLE</strong> (3x ICM-20948 IMU at 100 Hz, 62 samples/window)</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <label class="sound-toggle">
+          <input type="checkbox" id="sound-toggle" checked>
+          <span>Audio Feedback</span>
+        </label>
+        <span>Stored locally in browser (max 1,000 entries)</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    /* --- State & Configuration --- */
+    const STORAGE_KEY = 'nanoDecisionLog_v2';
+    const MAX_SAVED_ENTRIES = 1000;
+    const TARGET_REPETITIONS = 10;
+
+    let returnDelayMs = 3000; // Configurable delay to return hand to start point
+    let isResting = false;     // True during return/recovery cooldown phase
+    let restCountdownTimer = null;
+    let restEndTime = 0;
+
+    let selectedTarget = 'Flexion';
+    let currentReps = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let currentStreak = 0;
+    let activeFilter = 'all';
+
+    // Web Serial Handles
+    let port = null;
+    let reader = null;
+    let readableStreamClosed = null;
+    let keepReading = false;
+    let serialBuffer = '';
+    let simInterval = null;
+
+    // Persisted Log Entries
+    let logs = [];
+
+    /* --- DOM Selectors --- */
+    const btnConnect = document.getElementById('btn-connect');
+    const btnDisconnect = document.getElementById('btn-disconnect');
+    const btnExportCsv = document.getElementById('btn-export-csv');
+    const btnClearLog = document.getElementById('btn-clear-log');
+    const btnDemoSim = document.getElementById('btn-demo-sim');
+    const connectionDot = document.getElementById('connection-dot');
+    const connectionText = document.getElementById('connection-text');
+
+    const cardTargetVal = document.getElementById('card-target-val');
+    const cardRepVal = document.getElementById('card-rep-val');
+    const cardRepPercent = document.getElementById('card-rep-percent');
+    const cardAccVal = document.getElementById('card-acc-val');
+    const statCorrectCount = document.getElementById('stat-correct-count');
+    const statWrongCount = document.getElementById('stat-wrong-count');
+    const cardStreakVal = document.getElementById('card-streak-val');
+
+    const repCurrentCount = document.getElementById('rep-current-count');
+    const repProgressText = document.getElementById('rep-progress-text');
+    const repProgressFill = document.getElementById('rep-progress-fill');
+    const goalCompleteBanner = document.getElementById('goal-complete-banner');
+    const btnRepMinus = document.getElementById('btn-rep-minus');
+    const btnRepPlus = document.getElementById('btn-rep-plus');
+    const btnRepReset = document.getElementById('btn-rep-reset');
+    const restDelaySelect = document.getElementById('rest-delay-select');
+
+    const restStatusBanner = document.getElementById('rest-status-banner');
+    const restStatusIcon = document.getElementById('rest-status-icon');
+    const restStatusText = document.getElementById('rest-status-text');
+    const restCountdownBadge = document.getElementById('rest-countdown-badge');
+    const restProgressFill = document.getElementById('rest-progress-fill');
+
+    const decisionText = document.getElementById('decision-text');
+    const liveIndicator = document.getElementById('live-indicator');
+    const compTargetName = document.getElementById('comp-target-name');
+    const compDetectedName = document.getElementById('comp-detected-name');
+    const compMatchStatus = document.getElementById('comp-match-status');
+    const lastUpdateTime = document.getElementById('last-update-time');
+    const boardAccuracyText = document.getElementById('board-accuracy-text');
+
+    const logList = document.getElementById('log-list');
+    const logCountBadge = document.getElementById('log-count-badge');
+    const soundToggle = document.getElementById('sound-toggle');
+
+    /* --- Audio Synthesizer for Feedback --- */
+    let audioCtx = null;
+    function playAudio(type) {
+      if (!soundToggle.checked) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'correct') {
+          // Pleasant high chime: 587Hz -> 880Hz
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.12);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'ready') {
+          // Double harmonic ready tone: 440Hz -> 659Hz
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.08);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+          osc.start(now);
+          osc.stop(now + 0.24);
+        } else if (type === 'wrong') {
+          // Soft low blip
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(160, now + 0.15);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        }
+      } catch (e) {}
+    }
+
+    /* --- Utility Normalization & Colors --- */
+    function normalize(str) {
+      return (str || '').trim().toLowerCase().replace(/[\s_]+/g, '');
+    }
+
+    function formatMovementDisplay(label) {
+      if (!label) return '--';
+      return label.replace(/_/g, ' ');
+    }
+
+    function getColorForMovement(label) {
+      const norm = normalize(label);
+      if (norm.includes('extension')) return 'var(--color-extension)';
+      if (norm.includes('flexion')) return 'var(--color-flexion)';
+      if (norm.includes('pronation')) return 'var(--color-pronation)';
+      if (norm.includes('radial')) return 'var(--color-radial)';
+      if (norm.includes('supination')) return 'var(--color-supination)';
+      if (norm.includes('ulnar')) return 'var(--color-ulnar)';
+      return 'var(--text-main)';
+    }
+
+    /* --- Return to Start Point / Rest Delay Management --- */
+    restDelaySelect.addEventListener('change', (e) => {
+      returnDelayMs = parseInt(e.target.value, 10) || 3000;
+    });
+
+    function startReturnDelay() {
+      isResting = true;
+      restEndTime = Date.now() + returnDelayMs;
+
+      restStatusBanner.className = 'rest-status-banner resting';
+      restStatusIcon.textContent = '⏳';
+      restStatusText.textContent = 'Return hand to starting point...';
+      restCountdownBadge.className = 'rest-countdown-badge';
+      restProgressFill.className = 'rest-progress-fill';
+
+      if (restCountdownTimer) clearInterval(restCountdownTimer);
+
+      const updateCountdown = () => {
+        const remaining = restEndTime - Date.now();
+        if (remaining <= 0) {
+          clearInterval(restCountdownTimer);
+          restCountdownTimer = null;
+          endReturnDelay();
+        } else {
+          const seconds = (remaining / 1000).toFixed(1);
+          const percent = Math.max(0, Math.min(100, (remaining / returnDelayMs) * 100));
+          restCountdownBadge.textContent = `${seconds}s`;
+          restProgressFill.style.width = `${percent}%`;
+        }
+      };
+
+      updateCountdown();
+      restCountdownTimer = setInterval(updateCountdown, 50);
+    }
+
+    function endReturnDelay() {
+      isResting = false;
+      restStatusBanner.className = 'rest-status-banner ready';
+      restStatusIcon.textContent = '🟢';
+      restStatusText.textContent = `Hand in start position · READY for Rep #${currentReps + 1} (${formatMovementDisplay(selectedTarget)})`;
+      restCountdownBadge.className = 'rest-countdown-badge ready';
+      restCountdownBadge.textContent = 'READY';
+      restProgressFill.className = 'rest-progress-fill ready';
+      restProgressFill.style.width = '100%';
+
+      playAudio('ready');
+    }
+
+    /* --- Repetition Counter Management --- */
+    function updateRepetitionUI() {
+      repCurrentCount.textContent = currentReps;
+      cardRepVal.textContent = `${currentReps} / ${TARGET_REPETITIONS}`;
+      
+      const pct = Math.min(100, Math.round((currentReps / TARGET_REPETITIONS) * 100));
+      repProgressText.textContent = `${pct}%`;
+      cardRepPercent.textContent = `${pct}% Completed`;
+      repProgressFill.style.width = `${pct}%`;
+
+      if (currentReps >= TARGET_REPETITIONS) {
+        goalCompleteBanner.style.display = 'flex';
+        repProgressFill.style.background = 'linear-gradient(90deg, #10b981, #06b6d4)';
+      } else {
+        goalCompleteBanner.style.display = 'none';
+        repProgressFill.style.background = 'linear-gradient(90deg, #0ea5e9, #10b981)';
+      }
+    }
+
+    function setRepetitions(val) {
+      currentReps = Math.max(0, Math.min(999, val));
+      updateRepetitionUI();
+      if (!isResting) {
+        restStatusText.textContent = currentReps >= TARGET_REPETITIONS
+          ? 'Exercise Completed! 🎉 Select next exercise or reset reps.'
+          : `Hand in start position · READY for Rep #${currentReps + 1} (${formatMovementDisplay(selectedTarget)})`;
+      }
+    }
+
+    btnRepMinus.addEventListener('click', () => setRepetitions(currentReps - 1));
+    btnRepPlus.addEventListener('click', () => setRepetitions(currentReps + 1));
+    btnRepReset.addEventListener('click', () => {
+      setRepetitions(0);
+      if (restCountdownTimer) {
+        clearInterval(restCountdownTimer);
+        restCountdownTimer = null;
+      }
+      endReturnDelay();
+    });
+
+    /* --- Target Movement Selection via Radio Buttons --- */
+    function setupRadioListeners() {
+      const radios = document.querySelectorAll('input[name="targetMovement"]');
+      radios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          selectedTarget = e.target.value;
+          cardTargetVal.textContent = formatMovementDisplay(selectedTarget);
+          cardTargetVal.style.color = getColorForMovement(selectedTarget);
+          compTargetName.textContent = formatMovementDisplay(selectedTarget);
+          compTargetName.style.color = getColorForMovement(selectedTarget);
+          
+          // Reset reps for the newly selected movement
+          setRepetitions(0);
+          if (restCountdownTimer) {
+            clearInterval(restCountdownTimer);
+            restCountdownTimer = null;
+          }
+          endReturnDelay();
+        });
+      });
+    }
+
+    /* --- Updating Telemetry & Ingestion Pipeline --- */
+    function processInference(detectedRaw, reportedAccuracy = null) {
+      const timeStr = new Date().toLocaleTimeString();
+      const detected = detectedRaw.trim();
+      const isMatch = normalize(detected) === normalize(selectedTarget);
+
+      // If user is currently in the recovery / return-to-start delay:
+      if (isResting) {
+        // Show current movement during return without counting or penalizing
+        decisionText.textContent = formatMovementDisplay(detected);
+        decisionText.style.color = getColorForMovement(detected);
+        compDetectedName.textContent = formatMovementDisplay(detected);
+        compDetectedName.style.color = getColorForMovement(detected);
+        
+        compMatchStatus.className = 'match-pill resting';
+        compMatchStatus.innerHTML = `<span>⏳ Returning...</span>`;
+        lastUpdateTime.textContent = timeStr;
+        return; // Ignore rep increments or penalty during return transition
+      }
+
+      // Normal Active Evaluation
+      if (isMatch) {
+        if (currentReps < TARGET_REPETITIONS) {
+          setRepetitions(currentReps + 1);
+        }
+        correctCount++;
+        currentStreak++;
+        playAudio('correct');
+
+        // Start return delay countdown so user can return hand to start point
+        if (currentReps < TARGET_REPETITIONS) {
+          startReturnDelay();
+        }
+      } else {
+        wrongCount++;
+        currentStreak = 0;
+        playAudio('wrong');
+      }
+
+      // Update Live UI Cards
+      decisionText.textContent = formatMovementDisplay(detected);
+      decisionText.style.color = getColorForMovement(detected);
+      compDetectedName.textContent = formatMovementDisplay(detected);
+      compDetectedName.style.color = getColorForMovement(detected);
+
+      compMatchStatus.className = `match-pill ${isMatch ? 'correct' : 'wrong'}`;
+      compMatchStatus.innerHTML = isMatch 
+        ? `<svg style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg> CORRECT`
+        : `<svg style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> WRONG`;
+
+      lastUpdateTime.textContent = timeStr;
+      liveIndicator.textContent = '● Receiving';
+      liveIndicator.style.color = 'var(--emerald)';
+
+      if (reportedAccuracy) {
+        boardAccuracyText.textContent = reportedAccuracy;
+      }
+
+      // Update Statistics
+      const totalDecisions = correctCount + wrongCount;
+      const acc = totalDecisions > 0 ? ((correctCount / totalDecisions) * 100).toFixed(1) : '0.0';
+      cardAccVal.textContent = `${acc}%`;
+      statCorrectCount.textContent = correctCount;
+      statWrongCount.textContent = wrongCount;
+      cardStreakVal.textContent = `${currentStreak} 🔥`;
+
+      // Log Entry
+      const entry = {
+        time: timeStr,
+        target: selectedTarget,
+        predicted: detected,
+        status: isMatch ? 'CORRECT' : 'WRONG',
+        rep: currentReps,
+        boardAccuracy: reportedAccuracy || '--'
+      };
+
+      logs.unshift(entry);
+      if (logs.length > MAX_SAVED_ENTRIES) logs.pop();
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(0, 300)));
+      } catch (e) {}
+
+      renderLogItem(entry, true);
+      updateLogCountBadge();
+    }
+
+    /* --- Log Rendering & Filtering --- */
+    function renderLogItem(entry, prepend = true) {
+      document.getElementById('log-empty-state')?.remove();
+
+      const isHidden = activeFilter !== 'all' && entry.status !== activeFilter;
+      const li = document.createElement('li');
+      li.className = 'log-item';
+      li.dataset.status = entry.status;
+      if (isHidden) li.style.display = 'none';
+
+      li.innerHTML = `
+        <span class="log-time">${entry.time}</span>
+        <div class="log-details">
+          <div class="log-labels">
+            <span class="target-tag" title="Selected Target">${formatMovementDisplay(entry.target)}</span>
+            <span class="log-arrow">➜</span>
+            <span class="pred-tag" style="color: ${getColorForMovement(entry.predicted)}" title="Model Output">${formatMovementDisplay(entry.predicted)}</span>
+          </div>
+        </div>
+        <span class="log-status ${entry.status.toLowerCase()}">${entry.status}</span>
+        <span class="log-rep-count" title="Repetition progress">${entry.rep}/10</span>
+      `;
+
+      if (prepend) {
+        logList.prepend(li);
+        while (logList.children.length > 300) {
+          logList.lastElementChild.remove();
+        }
+      } else {
+        logList.appendChild(li);
+      }
+    }
+
+    function applyLogFilter(filter) {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+      });
+
+      const items = logList.querySelectorAll('.log-item');
+      items.forEach(item => {
+        if (filter === 'all' || item.dataset.status === filter) {
+          item.style.display = 'grid';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyLogFilter(btn.dataset.filter));
+    });
+
+    function updateLogCountBadge() {
+      logCountBadge.textContent = `${logs.length} entries`;
+    }
+
+    /* --- CSV Export Functionality --- */
+    function exportLogsToCSV() {
+      if (logs.length === 0) {
+        alert('No verification data has been recorded yet. Connect your device or run simulation to log gestures.');
+        return;
+      }
+
+      const headers = ['Timestamp', 'Target_Movement', 'Predicted_Movement', 'Result', 'Repetition_Count', 'Board_Accuracy'];
+      const rows = logs.map(e => [
+        `"${e.time}"`,
+        `"${e.target}"`,
+        `"${e.predicted}"`,
+        `"${e.status}"`,
+        `"${e.rep}/10"`,
+        `"${e.boardAccuracy}"`
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      const date = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `IMU_Rehab_Log_${date}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    btnExportCsv.addEventListener('click', exportLogsToCSV);
+
+    /* --- Clear Log --- */
+    btnClearLog.addEventListener('click', () => {
+      if (confirm('Clear all session logs and reset statistics?')) {
+        logs = [];
+        correctCount = 0;
+        wrongCount = 0;
+        currentStreak = 0;
+        localStorage.removeItem(STORAGE_KEY);
+        setRepetitions(0);
+        
+        cardAccVal.textContent = '0.0%';
+        statCorrectCount.textContent = '0';
+        statWrongCount.textContent = '0';
+        cardStreakVal.textContent = '0 🔥';
+        
+        decisionText.textContent = 'Waiting...';
+        decisionText.style.color = 'var(--text-main)';
+        compDetectedName.textContent = '--';
+        compMatchStatus.className = 'match-pill waiting';
+        compMatchStatus.textContent = 'Waiting';
+
+        logList.innerHTML = `
+          <li id="log-empty-state" class="empty-state">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <span>Log cleared. Connect Arduino to resume logging.</span>
+          </li>
+        `;
+        updateLogCountBadge();
+        endReturnDelay();
+      }
+    });
+
+    /* --- Web Serial Stream Parsing --- */
+    function parseIncomingLine(line) {
+      if (!line) return;
+      line = line.trim();
+      
+      const predMatch = line.match(/^Prediction:\s*(.+)$/i);
+      const accMatch = line.match(/^Accuracy:\s*(.+)$/i);
+
+      if (predMatch) {
+        processInference(predMatch[1].trim());
+      } else if (accMatch) {
+        boardAccuracyText.textContent = accMatch[1].trim();
+      }
+    }
+
+    async function startSerialRead() {
+      keepReading = true;
+      const textDecoder = new TextDecoderStream();
+      readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+      reader = textDecoder.readable.getReader();
+
+      try {
+        while (keepReading) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          serialBuffer += value;
+          const lines = serialBuffer.split(/\r?\n/);
+          serialBuffer = lines.pop(); // keep partial line in buffer
+          lines.forEach(parseIncomingLine);
+        }
+      } catch (err) {
+        console.warn('Serial read error or closed:', err);
+      } finally {
+        try { reader.releaseLock(); } catch(e){}
+      }
+    }
+
+    async function disconnectSerial() {
+      keepReading = false;
+      if (reader) {
+        try { await reader.cancel(); } catch(e){}
+      }
+      if (readableStreamClosed) {
+        try { await readableStreamClosed.catch(() => {}); } catch(e){}
+      }
+      if (port) {
+        try { await port.close(); } catch(e){}
+        port = null;
+      }
+      setConnectedStatus(false, 'Disconnected');
+    }
+
+    function setConnectedStatus(connected, text) {
+      connectionDot.classList.toggle('connected', connected);
+      connectionText.textContent = text;
+      btnConnect.style.display = connected ? 'none' : 'inline-flex';
+      btnDisconnect.style.display = connected ? 'inline-flex' : 'none';
+      if (!connected) {
+        liveIndicator.textContent = '● Idle';
+        liveIndicator.style.color = 'var(--text-dim)';
+      }
+    }
+
+    btnConnect.addEventListener('click', async () => {
+      if (!('serial' in navigator)) {
+        alert('Web Serial API is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+        return;
+      }
+
+      // Stop simulator if active
+      if (simInterval) clearInterval(simInterval);
+
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        setConnectedStatus(true, 'Connected (115200 baud)');
+        startSerialRead();
+      } catch (err) {
+        console.error('Serial connection error:', err);
+        setConnectedStatus(false, err.name === 'NotFoundError' ? 'Disconnected' : 'Connection Failed');
+      }
+    });
+
+    btnDisconnect.addEventListener('click', disconnectSerial);
+
+    /* --- Offline Simulation Demo Mode --- */
+    btnDemoSim.addEventListener('click', () => {
+      if (simInterval) {
+        clearInterval(simInterval);
+        simInterval = null;
+        btnDemoSim.textContent = 'Simulate';
+        btnDemoSim.classList.remove('btn-primary');
+        btnDemoSim.classList.add('btn-secondary');
+        setConnectedStatus(false, 'Disconnected');
+        return;
+      }
+
+      btnDemoSim.textContent = 'Stop Sim';
+      btnDemoSim.classList.remove('btn-secondary');
+      btnDemoSim.classList.add('btn-primary');
+      setConnectedStatus(true, 'Simulation Active');
+
+      const allMovements = ['Extension', 'Flexion', 'Pronation', 'Radial_Deviation', 'Supination', 'Ulnar_Deviation'];
+      simInterval = setInterval(() => {
+        const isCorrectSim = Math.random() < 0.75;
+        const movement = isCorrectSim 
+          ? selectedTarget 
+          : allMovements[Math.floor(Math.random() * allMovements.length)];
+        
+        processInference(movement, `${(90 + Math.random() * 8).toFixed(1)} percent`);
+      }, 1500);
+    });
+
+    /* --- Initialization on Page Load --- */
+    function init() {
+      setupRadioListeners();
+      cardTargetVal.textContent = formatMovementDisplay(selectedTarget);
+      cardTargetVal.style.color = getColorForMovement(selectedTarget);
+      compTargetName.textContent = formatMovementDisplay(selectedTarget);
+      compTargetName.style.color = getColorForMovement(selectedTarget);
+      updateRepetitionUI();
+      endReturnDelay();
+
+      // Load saved logs
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (Array.isArray(saved) && saved.length > 0) {
+          logs = saved;
+          logs.slice(0, 100).reverse().forEach(entry => renderLogItem(entry, true));
+          updateLogCountBadge();
+        }
+      } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
